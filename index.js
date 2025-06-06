@@ -1,5 +1,6 @@
 const DEFAULT_HOST = 'https://app.launchdarkly.com';
 
+const setTimeoutPromise = require('timers/promises').setTimeout;
 const jsonPatch = require('fast-json-patch');
 const request = require('request');
 const program = require('commander');
@@ -79,6 +80,10 @@ const copyValues = function (flag, config) {
   const { destinationEnvironment, sourceEnvironment } = config;
   const attributes = ['on', 'archived', 'targets', 'rules', 'prerequisites', 'fallthrough', 'offVariation'];
   attributes.forEach(function (attr) {
+	  if (attr === 'rules') {
+      // Skip rules - dont work for some reason, Guide
+		  return;
+	  }
     flag.environments[destinationEnvironment][attr] = flag.environments[sourceEnvironment][attr];
   });
 };
@@ -182,6 +187,8 @@ async function syncEnvironment(config = {}) {
     }
 
     for (const flag of flags) {
+      // Sleep 2s to avoid rate limiting, Guide
+      await setTimeoutPromise(2000);
       await syncFlag(flag, config);
     }
 
